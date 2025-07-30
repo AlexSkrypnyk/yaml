@@ -1,0 +1,14 @@
+#
+# Ahoy configuration file.
+# http://www.ahoycli.com/
+#
+ahoyapi: v2
+
+commands:
+  build:
+    usage: Build or rebuild the project.
+    cmd: make build
+
+  info:
+    usage: Show information about this project.
+    cmd: make info

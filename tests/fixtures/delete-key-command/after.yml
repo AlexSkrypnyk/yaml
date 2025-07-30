@@ -1,0 +1,59 @@
+#
+# Ahoy configuration file.
+# http://www.ahoycli.com/
+#
+# Test fixture for YAML updating with comment preservation
+#
+ahoyapi: v2
+
+commands:
+  # Build command
+  build:
+    usage: Build or rebuild the project.
+    cmd: |
+      # Reset the project
+      ahoy reset
+      # Start the stack
+      ahoy up --build --force-recreate
+
+  # Information command
+  info:
+    usage: Show information about this project.
+    cmd: |
+      COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-${PWD##*/}} \
+      ahoy cli ./scripts/vortex/info.sh "$@"
+
+  # Database operations
+  down:
+    usage: 'Stop and remove containers, images, volumes and networks.'
+    cmd: docker compose down --remove-orphans --volumes
+
+  restart:
+    usage: Restart stopped or running containers.
+    cmd: docker compose restart "$@"
+
+  local:
+    usage: Custom local commands. See `ahoy local help`.
+    optional: true
+    imports: [.ahoy.local.yml]
+
+  pull-db:
+    usage: Download database image with the latest nightly dump. Run "ahoy reload-db" to reload DB in the running stack.
+    cmd: \[ -n "${VORTEX_DB_IMAGE}" \] && docker pull ${VORTEX_DB_IMAGE} || true
+
+  fe:
+    usage: Build front-end assets.
+    cmd: ahoy cli "cd ${WEBROOT}/themes/custom/${DRUPAL_THEME} && yarn run build"
+
+# Override entrypoint to alter default behavior of Ahoy.
+entrypoint:
+  - bash
+  # Same as `bash -c -e`
+  - '-c'
+  - -e
+  # Exit the script if any statement returns a non-true return value.
+  - |
+    bash -e -c "$0" "$@"
+  - '{{cmd}}'
+  # Exit the script if any statement returns a non-true return value.
+  - '{{name}}'
