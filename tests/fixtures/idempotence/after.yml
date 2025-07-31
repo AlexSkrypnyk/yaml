@@ -28,6 +28,10 @@ commands:
     usage: 'Stop and remove containers, images, volumes and networks.'
     cmd: docker compose down --remove-orphans --volumes
 
+  up:
+    usage: 'Stop and remove containers, images, volumes and networks.'
+    cmd: docker compose down --remove-orphans --volumes "$@"
+
 # Override entrypoint to alter default behavior of Ahoy.
 entrypoint:
   - bash
