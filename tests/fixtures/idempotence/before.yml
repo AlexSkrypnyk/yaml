@@ -29,8 +29,24 @@ commands:
     cmd: docker compose down --remove-orphans --volumes
 
   up:
-    usage: 'Stop and remove containers, images, volumes and networks.'
+    usage: 'Start containers.'
     cmd: docker compose down --remove-orphans --volumes "$@"
+
+  stop:
+    usage: 'Stop and containers.'
+    cmd: docker compose down --remove-orphans --volumes $@
+
+  stop-escaped:
+    usage: 'Stop and containers.'
+    cmd: ahoy cli "vendor/bin/drush -l \${VORTEX_LOCALDEV_URL} $*"
+
+  stop-multiline:
+    usage: 'Stop and containers.'
+    cmd: |
+      docker compose down --remove-orphans
+      docker compose down --remove-orphans --volumes $@
+      docker compose down --remove-orphans --volumes "$@"
+      docker compose down --remove-orphans
 
 # Override entrypoint to alter default behavior of Ahoy.
 entrypoint:
