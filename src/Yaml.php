@@ -181,13 +181,13 @@ class Yaml {
     // Build a map of originally quoted strings to preserve them.
     $originally_quoted = static::buildOriginallyQuotedMap(static::$lines);
 
-    $pattern1 = "/^(\s*\w+:\s)'([^']+)'$/m";
+    $pattern1 = "/^(\s*\w+:\s)'((?:[^']|'')+)'$/m";
     $result = preg_replace_callback($pattern1, function (array $matches) use ($originally_quoted): string {
-      $unquoted_value = $matches[2];
+      $unquoted_value = str_replace("''", "'", $matches[2]);
       if (isset($originally_quoted[$unquoted_value])) {
         return $matches[0];
       }
-      return $matches[1] . $matches[2];
+      return $matches[1] . $unquoted_value;
     }, $content);
 
     if ($result === NULL) {
@@ -219,8 +219,8 @@ class Yaml {
     $quoted_strings = [];
 
     foreach ($lines as $line) {
-      if (preg_match("/^\s*\w+:\s'([^']+)'$/", $line, $matches)) {
-        $quoted_strings[$matches[1]] = TRUE;
+      if (preg_match("/^\s*\w+:\s'((?:[^']|'')+)'$/", $line, $matches)) {
+        $quoted_strings[str_replace("''", "'", $matches[1])] = TRUE;
       }
 
       if (preg_match("/^\s*-\s'([a-zA-Z0-9_-]+|{{[^}]+}})'$/", $line, $matches)) {

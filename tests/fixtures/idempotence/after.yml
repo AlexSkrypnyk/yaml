@@ -48,6 +48,10 @@ commands:
       docker compose down --remove-orphans --volumes "$@"
       docker compose down --remove-orphans
 
+  debug:
+    usage: Enable PHP Xdebug.
+    cmd: ahoy cli php -v | grep -q Xdebug || XDEBUG_ENABLE=true ahoy up cli php nginx && ahoy cli php -v | grep -q Xdebug && echo "Enabled debug configuration. Use 'ahoy up' to disable."
+
 # Override entrypoint to alter default behavior of Ahoy.
 entrypoint:
   - bash
