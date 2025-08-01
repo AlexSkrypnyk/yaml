@@ -6,6 +6,9 @@ parameters:
 
   level: 9
 
+  # Prefer type checking over docblocks, which can easily become outdated.
+  treatPhpDocTypesAsCertain: false
+
   paths:
     - src
     - tests

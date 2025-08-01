@@ -25,7 +25,7 @@ commands:
 
   # Database operations
   down:
-    usage: 'Stop and remove containers, images, volumes and networks.'
+    usage: Updated stop command description
     cmd: docker compose down --remove-orphans --volumes
 
   restart:

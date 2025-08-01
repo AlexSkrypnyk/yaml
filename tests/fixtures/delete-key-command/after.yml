@@ -37,13 +37,6 @@ commands:
     optional: true
     imports: [.ahoy.local.yml]
 
-  local2:
-    usage: 'Custom local commands. See `ahoy local help`.'
-    optional: false
-    imports:
-      - .ahoy.local.yml
-      - .ahoy.local2.yml
-
   pull-db:
     usage: Download database image with the latest nightly dump. Run "ahoy reload-db" to reload DB in the running stack.
     cmd: \[ -n "${VORTEX_DB_IMAGE}" \] && docker pull ${VORTEX_DB_IMAGE} || true

@@ -18,7 +18,6 @@
     },
     "require": {
         "php": ">=8.2",
-        "consolidation/comments": "^2",
         "symfony/yaml": "^7"
     },
     "require-dev": {

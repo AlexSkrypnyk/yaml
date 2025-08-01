@@ -52,6 +52,9 @@ commands:
     usage: Build front-end assets.
     cmd: ahoy cli "cd ${WEBROOT}/themes/custom/${DRUPAL_THEME} && yarn run build"
 
+  deploy:
+    usage: Deploy the application
+    cmd: make deploy
 # Override entrypoint to alter default behavior of Ahoy.
 entrypoint:
   - bash

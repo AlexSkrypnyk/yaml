@@ -9,7 +9,6 @@ ahoyapi: v2
 commands:
   # Build command
   build:
-    usage: Build or rebuild the project.
     cmd: |
       # Reset the project
       ahoy reset

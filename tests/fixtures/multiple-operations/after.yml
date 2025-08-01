@@ -4,12 +4,12 @@
 #
 # Test fixture for YAML updating with comment preservation
 #
-ahoyapi: v2
+ahoyapi: v3
 
 commands:
   # Build command
   build:
-    usage: Build or rebuild the project.
+    usage: Enhanced build process
     cmd: |
       # Reset the project
       ahoy reset
@@ -31,11 +31,6 @@ commands:
   restart:
     usage: Restart stopped or running containers.
     cmd: docker compose restart "$@"
-
-  local:
-    usage: Custom local commands. See `ahoy local help`.
-    optional: true
-    imports: [.ahoy.local.yml]
 
   local2:
     usage: 'Custom local commands. See `ahoy local help`.'
