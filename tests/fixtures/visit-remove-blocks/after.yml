@@ -12,7 +12,6 @@ commands:
     usage: Build or rebuild the project.
     cmd: |
       # Reset the project
-      ahoy reset
       # Start the stack
       ahoy up --build --force-recreate
 
