@@ -109,8 +109,16 @@ class Lexer {
             break;
           }
 
-          // Add content line.
-          $block_content[] = ltrim($block_line);
+          // Add content line, preserving relative indentation beyond base.
+          // Remove only the base indentation, keep additional indentation.
+          if (strlen($block_line) >= $base_indent) {
+            $content_line = substr($block_line, $base_indent);
+          }
+          else {
+            // Line has less indentation than base, keep as-is after ltrim.
+            $content_line = ltrim($block_line);
+          }
+          $block_content[] = $content_line;
           $block_lines[] = $block_line;
           $i++;
         }
