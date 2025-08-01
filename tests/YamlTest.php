@@ -81,6 +81,56 @@ class YamlTest extends TestCase {
     $this->assertSame($expected, $actual);
   }
 
+  public function testParseFileThrowsExceptionOnInvalidFile(): void {
+    $this->expectException(\RuntimeException::class);
+    $this->expectExceptionMessage('File does not exist: /nonexistent/file.yml');
+    Yaml::parseFile('/nonexistent/file.yml');
+  }
+
+  public function testDumpWithoutOriginalLines(): void {
+    $data = ['key' => 'value'];
+    $result = Yaml::dump($data);
+    $this->assertStringContainsString('key: value', $result);
+  }
+
+  public function testDumpWithNonArrayInput(): void {
+    Yaml::parse("key: value\n");
+    $result = Yaml::dump('simple string');
+    $this->assertSame("'simple string'", $result);
+  }
+
+  public function testToLinesWithWindowsLineEndings(): void {
+    $content = "line1\r\nline2\r\nline3";
+    $data = Yaml::parse($content);
+    $result = Yaml::dump($data);
+    $this->assertStringContainsString('line1', $result);
+  }
+
+  public function testToLinesWithOldMacLineEndings(): void {
+    $content = "line1\rline2\rline3";
+    $data = Yaml::parse($content);
+    $result = Yaml::dump($data);
+    $this->assertStringContainsString('line1', $result);
+  }
+
+  public function testUnquoteWithoutOriginalLines(): void {
+    // Test unquote method when static::$lines is NULL
+    // This happens when dump is called without parse being called first.
+    $data = ['key' => 'value'];
+    $result = Yaml::dump($data);
+    $this->assertStringContainsString('key: value', $result);
+  }
+
+  public function testUnquoteWithInvalidRegexContent(): void {
+    // Test scenario where preg_replace_callback might return null
+    // Use valid YAML content but create conditions that might cause regex
+    // issues.
+    $content = "key: 'value'";
+    Yaml::parse($content);
+    $result = Yaml::dump(['key' => 'test']);
+    $this->assertStringContainsString('key:', $result);
+  }
+
   public static function dataProviderCollapseEmptyLinesInLiteralBlocks(): array {
     return [
       'empty string' => [

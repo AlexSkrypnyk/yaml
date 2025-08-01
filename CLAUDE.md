@@ -59,3 +59,25 @@ The test suite uses a fixture-based approach where YAML files in `tests/fixtures
 - `after.yml`: Expected output after parsing and dumping
 
 Test data providers in `YamlTest::dataProviderUpdate()` can include optional callable manipulators to modify the parsed data before dumping.
+
+## Test Coverage Strategy
+
+The project aims for comprehensive test coverage through systematic testing practices:
+
+### Coverage Process
+- **Coverage Analysis**: Use `composer test-coverage` to generate coverage reports in `.logs/` directory
+- **Coverage Reports**: Review Cobertura XML and HTML reports to identify uncovered code paths
+- **Iterative Improvement**: Add tests for uncovered lines, focusing on edge cases and error conditions
+
+### Coverage Best Practices
+- **Exception Testing**: Test all exception paths, including file operations and invalid input scenarios
+- **Edge Case Coverage**: Test boundary conditions like different line endings, empty inputs, and null handling
+- **Error Suppression**: Use `@` operator in tests when intentionally triggering PHP warnings for exception testing
+- **Defensive Code**: Mark unreachable error handling code with `@codeCoverageIgnore` annotations
+- **Data Providers**: Use comprehensive data providers to test multiple scenarios efficiently
+
+### Coverage Strategies
+- **Method Isolation**: Test each public method independently and in combination
+- **State Testing**: Test methods with different internal states (e.g., with/without prior setup)
+- **Input Variation**: Test with various input types, formats, and edge cases
+- **Error Conditions**: Ensure all error paths and defensive code are exercised
