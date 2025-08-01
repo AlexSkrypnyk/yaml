@@ -71,6 +71,10 @@ class Yaml {
    *   If the file could not be read or the YAML is not valid.
    */
   public static function parseFile(string $filename, int $flags = 0): mixed {
+    if (!file_exists($filename)) {
+      throw new \RuntimeException('File does not exist: ' . $filename);
+    }
+
     $content = file_get_contents($filename);
 
     if ($content === FALSE) {
@@ -176,7 +180,9 @@ class Yaml {
    */
   protected static function unquote(string $content): string {
     if (static::$lines === NULL) {
+      // @codeCoverageIgnoreStart
       return $content;
+      // @codeCoverageIgnoreEnd
     }
 
     // Build a map of originally quoted strings to preserve them.
@@ -192,7 +198,9 @@ class Yaml {
     }, $content);
 
     if ($result === NULL) {
+      // @codeCoverageIgnoreStart
       return $content;
+      // @codeCoverageIgnoreEnd
     }
 
     $pattern2 = "/^(\s*-\s)'([a-zA-Z0-9_-]+|{{[^}]+}})'$/m";
