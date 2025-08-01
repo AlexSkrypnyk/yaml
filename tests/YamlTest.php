@@ -46,7 +46,7 @@ class YamlTest extends TestCase {
       $data = $manipulator($data);
     }
 
-    $actual_content = Yaml::dump($data, 4, 2, Yaml::DUMP_MULTI_LINE_LITERAL_BLOCK);
+    $actual_content = Yaml::dump($data, 3, 2, Yaml::DUMP_MULTI_LINE_LITERAL_BLOCK);
 
     $expected_content = file_get_contents($after);
 
