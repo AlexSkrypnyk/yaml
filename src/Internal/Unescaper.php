@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace AlexSkrypnyk\Yaml;
+namespace AlexSkrypnyk\Yaml\Internal;
 
-use AlexSkrypnyk\Yaml\Escaper;
 use Symfony\Component\Yaml\Escaper as SymfonyEscaper;
 use Symfony\Component\Yaml\Unescaper as SymfonyUnescaper;
 
@@ -23,13 +22,13 @@ class Unescaper extends SymfonyUnescaper {
    *   The YAML content to process.
    * @param array<string>|null $original_lines
    *   Lines of the original YAML content for context.
-   * @param int $flags
-   *   A bit field of DUMP_* constants to customize behavior.
+   * @param bool $use_ungreedy
+   *   Whether to use ungreedy quoting logic instead of strict Symfony logic.
    *
    * @return string
    *   The processed YAML content with unnecessary quotes removed.
    */
-  public static function unescapeSingleQuotedValueString(string $content, ?array $original_lines = NULL, int $flags = 0): string {
+  public static function unescapeSingleQuotedValueString(string $content, ?array $original_lines = NULL, bool $use_ungreedy = TRUE): string {
     if ($original_lines === NULL) {
       return $content;
     }
@@ -68,8 +67,6 @@ class Unescaper extends SymfonyUnescaper {
         }
         else {
           // Check if ungreedy quoting is enabled.
-          // DUMP_UNGREEDY_SINGLE_QUOTING.
-          $use_ungreedy = ($flags & (1 << 10)) !== 0;
           $requires = $use_ungreedy
             ? Escaper::requiresSingleQuotingUngreedy($matches[3])
             : SymfonyEscaper::requiresSingleQuoting($matches[3]);
@@ -99,8 +96,6 @@ class Unescaper extends SymfonyUnescaper {
         $value = $matches[2];
 
         // Check if ungreedy quoting is enabled.
-        // DUMP_UNGREEDY_SINGLE_QUOTING.
-        $use_ungreedy = ($flags & (1 << 10)) !== 0;
         $requires = $use_ungreedy
           ? Escaper::requiresSingleQuotingUngreedy($value)
           : SymfonyEscaper::requiresSingleQuoting($value);

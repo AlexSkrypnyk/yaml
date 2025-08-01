@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\Yaml;
 
-use AlexSkrypnyk\Yaml\Unescaper;
-use Consolidation\Comments\Comments;
+use AlexSkrypnyk\Yaml\Internal\Comments\CommentManager;
+use AlexSkrypnyk\Yaml\Internal\ContentParser;
+use AlexSkrypnyk\Yaml\Internal\Unescaper;
 use Symfony\Component\Yaml\Yaml as SymfonyYaml;
 
 /**
@@ -13,7 +14,8 @@ use Symfony\Component\Yaml\Yaml as SymfonyYaml;
  *
  * Adds several enhancements:
  * - Comment preservation during parsing and dumping.
- * - Ungreedy quoting for strings, reducing unnecessary quotes.
+ * - Ungreedy quoting for strings by default, reducing unnecessary quotes.
+ *   Use DUMP_STRICT_SINGLE_QUOTING flag to revert to Symfony's strict quoting.
  */
 class Yaml {
 
@@ -41,19 +43,16 @@ class Yaml {
 
   public const DUMP_NULL_AS_TILDE = SymfonyYaml::DUMP_NULL_AS_TILDE;
 
-  public const DUMP_UNGREEDY_SINGLE_QUOTING = 1 << 10;
+  public const DUMP_STRICT_SINGLE_QUOTING = 1 << 10;
+
+  public const DUMP_COLLAPSE_LITERAL_BLOCK_EMPTY_LINES = 1 << 11;
 
   /**
-   * Holds the original YAML content split into lines.
-   *
-   * @var array<string>|null
+   * The content parser for the original YAML content.
    */
-  protected static ?array $lines = NULL;
+  protected static ?ContentParser $contentParser = NULL;
 
-  /**
-   * Holds the detected line ending character(s) from the original content.
-   */
-  protected static string $lineEnding = "\n";
+  protected static ?string $content = NULL;
 
   /**
    * Parses a YAML file into a PHP value.
@@ -107,7 +106,7 @@ class Yaml {
    *   If the YAML is not valid.
    */
   public static function parse(string $input, int $flags = 0): mixed {
-    static::$lines = static::toLines($input);
+    static::$content = $input;
 
     return SymfonyYaml::parse($input, $flags);
   }
@@ -128,96 +127,44 @@ class Yaml {
    *   A bit field of DUMP_* constants to customize the dumped YAML string.
    */
   public static function dump(mixed $input, int $inline = 2, int $indent = 4, int $flags = 0): string {
-    $content = SymfonyYaml::dump($input, $inline, $indent, $flags);
+    $dump = SymfonyYaml::dump($input, $inline, $indent, $flags);
 
-    // If static::$lines is NULL, it means that there are no original lines to
-    // preserve comments.
-    if (static::$lines === NULL || !is_array($input)) {
-      return $content;
+    // If static::$content is NULL, it means that this was called just to dump
+    // a value without prior parsing. In this case, we don't have any knowledge
+    // about comments or original content, so we skip comment injection.
+    // We also want this to run as early as possible to increase our chances of
+    // comment position matching.
+    if (!is_null(static::$content)) {
+      $content_parser_for_comments = new ContentParser($dump);
+      $comment_manager = new CommentManager();
+      $comment_manager->collect(static::$content, $content_parser_for_comments->getEol());
+      $lines_with_comments = $comment_manager->inject($content_parser_for_comments->getLines());
+      $dump = implode($content_parser_for_comments->getEol(), $lines_with_comments);
     }
 
-    $comments = new Comments();
-    $comments->collect(static::$lines);
-
-    $lines = static::toLines($content);
-    $lines_with_comments = $comments->inject($lines);
-    $content = implode(static::$lineEnding, $lines_with_comments);
-
-    $content = Unescaper::unescapeSingleQuotedValueString($content, static::$lines, $flags);
-    $content = static::deduplicateLines($content);
-
-    if (!str_ends_with($content, static::$lineEnding)) {
-      $content .= static::$lineEnding;
+    // Collapse literal block empty lines if flag is set.
+    if (($flags & static::DUMP_COLLAPSE_LITERAL_BLOCK_EMPTY_LINES) !== 0) {
+      $content_parser_for_collapse = new ContentParser($dump);
+      $dump = $content_parser_for_collapse->collapseLiteralBlockEmptyLines();
     }
 
-    return $content;
-  }
-
-  /**
-   * Parse and store YAML content with line ending detection.
-   *
-   * @return array<string>
-   *   Array of lines from the content.
-   */
-  protected static function toLines(string $content): array {
-    // Detect line endings: \r\n (Windows), \r (old Mac), or \n (Unix/Linux)
-    if (str_contains($content, "\r\n")) {
-      static::$lineEnding = "\r\n";
-    }
-    elseif (str_contains($content, "\r")) {
-      static::$lineEnding = "\r";
-    }
-    else {
-      static::$lineEnding = "\n";
+    // Unescape greedily single-quoted strings if not in strict mode.
+    if (($flags & static::DUMP_STRICT_SINGLE_QUOTING) === 0) {
+      $content_parser_for_unescaper = new ContentParser(static::$content ?? $dump);
+      $dump = Unescaper::unescapeSingleQuotedValueString($dump, $content_parser_for_unescaper->getLines());
     }
 
-    return explode(static::$lineEnding, $content);
-  }
-
-  /**
-   * Remove consecutive duplicate lines (fixes consolidation/comments issues).
-   *
-   * @param string $content
-   *   The YAML content to process.
-   *
-   * @return string
-   *   The processed YAML content with duplicate lines removed.
-   */
-  protected static function deduplicateLines(string $content): string {
-    $lines = static::toLines($content);
-
-    $deduplicated_lines = [];
-    $previous_line = NULL;
-
-    foreach ($lines as $line) {
-      if ($line !== $previous_line) {
-        $deduplicated_lines[] = $line;
+    // @todo Only do this if the appropriate flag is set.
+    // Also prevent duplicated empty EOFs.
+    // Only add newline for array inputs (complex YAML structures)
+    if (is_array($input)) {
+      $content_parser_for_eof = new ContentParser(static::$content ?? $dump);
+      if (!str_ends_with($dump, $content_parser_for_eof->getEol())) {
+        $dump .= $content_parser_for_eof->getEol();
       }
-      $previous_line = $line;
     }
 
-    return implode(static::$lineEnding, $deduplicated_lines);
-  }
-
-  /**
-   * Collapse repeated empty lines within literal blocks.
-   *
-   * This function specifically targets YAML literal blocks indicated by the
-   * pipe character (|) and collapses multiple consecutive empty lines that
-   * occur immediately after the pipe. Empty lines in other parts of the
-   * content are left unchanged.
-   *
-   * @param string $content
-   *   The YAML content to process, which may contain literal blocks.
-   *
-   * @return string
-   *   The content with collapsed empty lines only within YAML literal blocks.
-   *   If the replacement fails, the original content is returned.
-   */
-  public static function collapseEmptyLinesInLiteralBlocks(string $content): string {
-    $replaced = preg_replace('/(?<=\|)(\n\s*\n)+/', "\n", $content);
-
-    return is_null($replaced) ? $content : $replaced;
+    return $dump;
   }
 
 }

@@ -62,6 +62,24 @@ $data['config']['database']['host'] = 'newhost';
 $output = Yaml::dump($data, 4, 2);
 ```
 
+## Flags
+
+### `DUMP_STRICT_SINGLE_QUOTING`
+
+By default, this library uses ungreedy quoting (fewer quotes for cleaner output). Use this flag to revert to Symfony's strict quoting behavior:
+
+```php
+$output = Yaml::dump($data, 4, 2, Yaml::DUMP_STRICT_SINGLE_QUOTING);
+```
+
+### `DUMP_COLLAPSE_LITERAL_BLOCK_EMPTY_LINES`
+
+Collapses consecutive empty lines anywhere within YAML literal blocks (after pipe characters `|`). This includes empty lines at the start and middle of literal block content, but preserves empty lines outside of literal blocks:
+
+```php
+$output = Yaml::dump($data, 4, 2, Yaml::DUMP_COLLAPSE_LITERAL_BLOCK_EMPTY_LINES);
+```
+
 ## Maintenance
 
     composer install

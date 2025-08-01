@@ -1,0 +1,38 @@
+# Header comment
+description: |
+
+
+  First line
+  Second line
+
+
+  Third line
+
+# Config section
+config:
+  # Database comment
+  database:
+    setup_script: |
+
+      1 CREATE TABLE users;
+      2 CREATE INDEX idx_users;
+
+
+      3 INSERT INTO users VALUES (1, 'admin');
+
+    teardown_script: |
+
+      4 DROP INDEX idx_users;
+
+
+      5 DROP TABLE users;
+
+  # App comment
+  application:
+    start_command: |
+      6 echo "Starting application"
+
+
+      7 ./start.sh
+
+another: value

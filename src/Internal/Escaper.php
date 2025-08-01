@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AlexSkrypnyk\Yaml;
+namespace AlexSkrypnyk\Yaml\Internal;
 
 use Symfony\Component\Yaml\Escaper as SymfonyEscaper;
 

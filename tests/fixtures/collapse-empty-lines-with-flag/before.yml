@@ -1,0 +1,37 @@
+# Test fixture for empty line collapsing
+description: |
+
+
+  First line
+  Second line
+
+
+  Third line
+
+config:
+  database:
+    setup_script: |
+
+
+      CREATE TABLE users;
+      CREATE INDEX idx_users;
+
+
+      INSERT INTO users VALUES (1, 'admin');
+
+    teardown_script: |
+
+      DROP INDEX idx_users;
+
+
+      DROP TABLE users;
+
+  application:
+    start_command: |
+      echo "Starting application"
+
+
+      ./start.sh
+      echo "Application started"
+
+another: value

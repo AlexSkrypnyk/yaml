@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AlexSkrypnyk\Yaml\Tests;
+namespace AlexSkrypnyk\Yaml\Tests\Internal;
 
-use AlexSkrypnyk\Yaml\Escaper;
+use AlexSkrypnyk\Yaml\Internal\Escaper;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -20,7 +20,6 @@ class EscaperTest extends TestCase {
     $actual = Escaper::requiresSingleQuotingUngreedy($input);
     $this->assertSame($expected, $actual, $reason);
   }
-
 
   public static function dataProviderRequiresSingleQuotingUngreedy(): array {
     // @see https://www.yaml.info/learn/quote.html
