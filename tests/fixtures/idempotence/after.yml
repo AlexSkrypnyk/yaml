@@ -37,6 +37,19 @@ commands:
     optional: true
     imports: [.ahoy.local.yml]
 
+  local2:
+    usage: 'Custom local commands. See `ahoy local help`.'
+    optional: false
+    imports: [.ahoy.local.yml]
+
+  pull-db:
+    usage: Download database image with the latest nightly dump. Run "ahoy reload-db" to reload DB in the running stack.
+    cmd: \[ -n "${VORTEX_DB_IMAGE}" \] && docker pull ${VORTEX_DB_IMAGE} || true
+
+  fe:
+    usage: Build front-end assets.
+    cmd: ahoy cli "cd ${WEBROOT}/themes/custom/${DRUPAL_THEME} && yarn run build"
+
 # Override entrypoint to alter default behavior of Ahoy.
 entrypoint:
   - bash

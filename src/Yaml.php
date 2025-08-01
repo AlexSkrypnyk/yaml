@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace AlexSkrypnyk\Yaml;
 
+use AlexSkrypnyk\Yaml\Unescaper;
 use Consolidation\Comments\Comments;
 use Symfony\Component\Yaml\Yaml as SymfonyYaml;
 
 /**
  * Yaml class provides a drop-in replacement for Symfony's Yaml component.
  *
- * Adds comment preservation functionality to standard YAML operations.
+ * Adds several enhancements:
+ * - Comment preservation during parsing and dumping.
+ * - Ungreedy quoting for strings, reducing unnecessary quotes.
  */
 class Yaml {
 
@@ -37,6 +40,8 @@ class Yaml {
   public const DUMP_EMPTY_ARRAY_AS_SEQUENCE = SymfonyYaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE;
 
   public const DUMP_NULL_AS_TILDE = SymfonyYaml::DUMP_NULL_AS_TILDE;
+
+  public const DUMP_UNGREEDY_SINGLE_QUOTING = 1 << 10;
 
   /**
    * Holds the original YAML content split into lines.
@@ -138,7 +143,7 @@ class Yaml {
     $lines_with_comments = $comments->inject($lines);
     $content = implode(static::$lineEnding, $lines_with_comments);
 
-    $content = static::unquote($content);
+    $content = Unescaper::unescapeSingleQuotedValueString($content, static::$lines, $flags);
     $content = static::deduplicateLines($content);
 
     if (!str_ends_with($content, static::$lineEnding)) {
@@ -167,77 +172,6 @@ class Yaml {
     }
 
     return explode(static::$lineEnding, $content);
-  }
-
-  /**
-   * Remove unnecessary single quotes from string values.
-   *
-   * @param string $content
-   *   The YAML content to process.
-   *
-   * @return string
-   *   The processed YAML content with unnecessary quotes removed.
-   */
-  protected static function unquote(string $content): string {
-    if (static::$lines === NULL) {
-      // @codeCoverageIgnoreStart
-      return $content;
-      // @codeCoverageIgnoreEnd
-    }
-
-    // Build a map of originally quoted strings to preserve them.
-    $originally_quoted = static::buildOriginallyQuotedMap(static::$lines);
-
-    $pattern1 = "/^(\s*\w+:\s)'([^':\[\]{}|>*&!]*)'$/m";
-    $result = preg_replace_callback($pattern1, function (array $matches) use ($originally_quoted): string {
-      $unquoted_value = $matches[2];
-      if (isset($originally_quoted[$unquoted_value])) {
-        return $matches[0];
-      }
-      return $matches[1] . $matches[2];
-    }, $content);
-
-    if ($result === NULL) {
-      // @codeCoverageIgnoreStart
-      return $content;
-      // @codeCoverageIgnoreEnd
-    }
-
-    $pattern2 = "/^(\s*-\s)'([a-zA-Z0-9_-]+|{{[^}]+}})'$/m";
-    $final_result = preg_replace_callback($pattern2, function (array $matches) use ($originally_quoted): string {
-      $unquoted_value = $matches[2];
-      if (isset($originally_quoted[$unquoted_value])) {
-        return $matches[0];
-      }
-      return $matches[1] . $matches[2];
-    }, $result);
-
-    return $final_result ?? $result;
-  }
-
-  /**
-   * Build a map of strings that were originally quoted in the source YAML.
-   *
-   * @param array<string> $lines
-   *   Lines of the original YAML content.
-   *
-   * @return array<string, bool>
-   *   Map of unquoted strings to TRUE if they were originally quoted.
-   */
-  protected static function buildOriginallyQuotedMap(array $lines): array {
-    $quoted_strings = [];
-
-    foreach ($lines as $line) {
-      if (preg_match("/^\s*\w+:\s'([^':\[\]{}|>*&!]+)'$/", $line, $matches)) {
-        $quoted_strings[$matches[1]] = TRUE;
-      }
-
-      if (preg_match("/^\s*-\s'([a-zA-Z0-9_-]+|{{[^}]+}})'$/", $line, $matches)) {
-        $quoted_strings[$matches[1]] = TRUE;
-      }
-    }
-
-    return $quoted_strings;
   }
 
   /**

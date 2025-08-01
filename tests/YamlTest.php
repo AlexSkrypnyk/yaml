@@ -46,7 +46,7 @@ class YamlTest extends TestCase {
       $data = $manipulator($data);
     }
 
-    $actual_content = Yaml::dump($data, 3, 2, Yaml::DUMP_MULTI_LINE_LITERAL_BLOCK);
+    $actual_content = Yaml::dump($data, 3, 2, Yaml::DUMP_MULTI_LINE_LITERAL_BLOCK | Yaml::DUMP_UNGREEDY_SINGLE_QUOTING);
 
     $expected_content = file_get_contents($after);
 
@@ -113,22 +113,18 @@ class YamlTest extends TestCase {
     $this->assertStringContainsString('line1', $result);
   }
 
-  public function testUnquoteWithoutOriginalLines(): void {
-    // Test unquote method when static::$lines is NULL
-    // This happens when dump is called without parse being called first.
-    $data = ['key' => 'value'];
-    $result = Yaml::dump($data);
-    $this->assertStringContainsString('key: value', $result);
-  }
+  public function testUngreedyFlagBehavior(): void {
+    $data = ['key' => 'hello world'];
 
-  public function testUnquoteWithInvalidRegexContent(): void {
-    // Test scenario where preg_replace_callback might return null
-    // Use valid YAML content but create conditions that might cause regex
-    // issues.
-    $content = "key: 'value'";
-    Yaml::parse($content);
-    $result = Yaml::dump(['key' => 'test']);
-    $this->assertStringContainsString('key:', $result);
+    // Without the flag, should use strict Symfony quoting.
+    $strict_result = Yaml::dump($data);
+    $this->assertStringContainsString("key: 'hello world'", $strict_result, 'Without flag should quote strings with spaces');
+
+    // With the flag, should use ungreedy quoting.
+    // Set up context for unquoting.
+    Yaml::parse("key: value\n");
+    $ungreedy_result = Yaml::dump($data, 2, 4, Yaml::DUMP_UNGREEDY_SINGLE_QUOTING);
+    $this->assertStringContainsString("key: hello world", $ungreedy_result, 'With flag should not quote strings with spaces');
   }
 
   public static function dataProviderCollapseEmptyLinesInLiteralBlocks(): array {
