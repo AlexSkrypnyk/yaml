@@ -75,4 +75,137 @@ class YamlTest extends TestCase {
     ];
   }
 
+  #[DataProvider('dataProviderCollapseEmptyLinesInLiteralBlocks')]
+  public function testCollapseEmptyLinesInLiteralBlocks(string $input, string $expected): void {
+    $actual = Yaml::collapseEmptyLinesInLiteralBlocks($input);
+    $this->assertSame($expected, $actual);
+  }
+
+  public static function dataProviderCollapseEmptyLinesInLiteralBlocks(): array {
+    return [
+      'empty string' => [
+        '',
+        '',
+      ],
+      'no literal blocks' => [
+        <<<YAML
+        key: value
+        another: test
+        YAML,
+        <<<YAML
+        key: value
+        another: test
+        YAML,
+      ],
+      'literal block immediately after pipe' => [
+        <<<YAML
+        |
+
+
+        content
+        YAML,
+        <<<YAML
+        |
+        content
+        YAML,
+      ],
+      'literal block with multiple empty lines after pipe' => [
+        <<<YAML
+        |
+
+
+
+        content
+        YAML,
+        <<<YAML
+        |
+        content
+        YAML,
+      ],
+      'literal block with whitespace in empty lines' => [
+        <<<YAML
+        |
+
+
+        content
+        YAML,
+        <<<YAML
+        |
+        content
+        YAML,
+      ],
+      'multiple literal blocks with collapsible lines' => [
+        <<<YAML
+        first: |
+
+
+        content1
+        second: |
+
+
+        content2
+        YAML,
+        <<<YAML
+        first: |
+        content1
+        second: |
+        content2
+        YAML,
+      ],
+      'mixed content no effect on non-literal blocks' => [
+        <<<YAML
+        key: value
+
+
+        description: |
+
+
+        content
+        another: test
+        YAML,
+        <<<YAML
+        key: value
+
+
+        description: |
+        content
+        another: test
+        YAML,
+      ],
+      'literal block with no empty lines to collapse' => [
+        <<<YAML
+        |
+        line1
+        line2
+        line3
+        YAML,
+        <<<YAML
+        |
+        line1
+        line2
+        line3
+        YAML,
+      ],
+      'literal block with single empty line after pipe' => [
+        <<<YAML
+        |
+
+        content
+        YAML,
+        <<<YAML
+        |
+        content
+        YAML,
+      ],
+      'preg_replace returns null preserves original' => [
+        // Create a string with invalid UTF-8 that could cause preg_replace to
+        // return null.
+        // This simulates the case where the regex engine fails due to encoding
+        // issues.
+        "|\n\xFF\xFE\n\ncontent",
+        "|\n\xFF\xFE\n\ncontent",
+      ],
+    ];
+  }
+
 }

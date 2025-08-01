@@ -54,6 +54,7 @@ class Yaml {
    * Parses a YAML file into a PHP value.
    *
    * Usage:
+   *
    * @code
    *
    *     $array = Yaml::parseFile('config.yml');
@@ -254,6 +255,27 @@ class Yaml {
     }
 
     return implode(static::$lineEnding, $deduplicated_lines);
+  }
+
+  /**
+   * Collapse repeated empty lines within literal blocks.
+   *
+   * This function specifically targets YAML literal blocks indicated by the
+   * pipe character (|) and collapses multiple consecutive empty lines that
+   * occur immediately after the pipe. Empty lines in other parts of the
+   * content are left unchanged.
+   *
+   * @param string $content
+   *   The YAML content to process, which may contain literal blocks.
+   *
+   * @return string
+   *   The content with collapsed empty lines only within YAML literal blocks.
+   *   If the replacement fails, the original content is returned.
+   */
+  public static function collapseEmptyLinesInLiteralBlocks(string $content): string {
+    $replaced = preg_replace('/(?<=\|)(\n\s*\n)+/', "\n", $content);
+
+    return is_null($replaced) ? $content : $replaced;
   }
 
 }
