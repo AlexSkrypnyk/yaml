@@ -27,6 +27,7 @@ commands:
   down:
     usage: 'Stop and remove containers, images, volumes and networks.'
     cmd: docker compose down --remove-orphans --volumes
+    aliases: [test-behat]
 
   restart:
     usage: Restart stopped or running containers.
