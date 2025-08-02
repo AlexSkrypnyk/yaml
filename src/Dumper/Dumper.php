@@ -89,7 +89,12 @@ class Dumper {
             else {
               $original_parsed = NULL;
             }
-            if ($original_parsed === $node->value) {
+            // For inline format values (arrays/maps), compare semantic content.
+            if ($this->isInlineFormat($node->value) && is_string($node->value) && $this->semanticallyEqual($original_parsed, $node->value)) {
+              // Values are semantically the same, use original formatting.
+              $value = $original_value;
+            }
+            elseif ($original_parsed === $node->value) {
               // Values are the same, use original formatting.
               $value = $original_value;
             }
@@ -258,6 +263,52 @@ class Dumper {
     }
 
     return $result;
+  }
+
+  /**
+   * Check if a value represents inline array or map format.
+   *
+   * @param mixed $value
+   *   The value to check.
+   *
+   * @return bool
+   *   TRUE if the value is in inline format.
+   */
+  protected function isInlineFormat($value): bool {
+    if (!is_string($value)) {
+      return FALSE;
+    }
+
+    $trimmed = trim($value);
+
+    // Check for inline array: [item1, item2] or [item].
+    if (preg_match('/^\[.*\]$/', $trimmed)) {
+      return TRUE;
+    }
+    // Check for inline map: {key1: value1, key2: value2} or {key: value}.
+    return (bool) preg_match('/^\{.*\}$/', $trimmed);
+  }
+
+  /**
+   * Check if two values are semantically equal for inline format comparison.
+   *
+   * @param mixed $parsed_value
+   *   The parsed value (e.g., PHP array).
+   * @param string $inline_string
+   *   The inline format string.
+   *
+   * @return bool
+   *   TRUE if values are semantically equal.
+   */
+  protected function semanticallyEqual($parsed_value, string $inline_string): bool {
+    try {
+      // Parse the inline string as YAML to get its semantic value.
+      $inline_parsed = SymfonyYaml::parse($inline_string);
+      return $parsed_value === $inline_parsed;
+    }
+    catch (\Exception $exception) {
+      return FALSE;
+    }
   }
 
 }
