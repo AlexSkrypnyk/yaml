@@ -16,6 +16,18 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Yaml::class)]
 class VisitTest extends TestCase {
 
+  /**
+   * Directory where fixture YAML files are stored.
+   */
+  protected string $fixturesDir;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp(): void {
+    $this->fixturesDir = __DIR__ . '/fixtures';
+  }
+
   public function testVisitBasicTraversal(): void {
     $yaml_content = <<<YAML
 name: test-app
@@ -292,6 +304,45 @@ YAML;
     $this->assertFalse($yaml->has(['environments', 'development']));
     $this->assertFalse($yaml->has(['environments', 'staging']));
     $this->assertTrue($yaml->has(['environments', 'production']));
+  }
+
+  public function testVisitRemoveBlocksFixture(): void {
+    $before = $this->fixturesDir . '/visit-remove-blocks/before.yml';
+    $after = $this->fixturesDir . '/visit-remove-blocks/after.yml';
+
+    // Ensure fixture files exist.
+    $this->assertFileExists($before, 'Before fixture file should exist');
+    $this->assertFileExists($after, 'After fixture file should exist');
+
+    // Load the YAML file.
+    $yaml = new Yaml();
+    $yaml->load($before);
+
+    // Apply visitor to remove specific line from block content.
+    $yaml->visit(function (Node $node, array $parent_path): Node {
+      // Remove the "ahoy reset" line from cmd blocks in the build command.
+      if (count($parent_path) === 2 && $parent_path[0] === 'commands' &&
+          $parent_path[1] === 'build' && $node->key === 'cmd' &&
+          is_string($node->value)) {
+        // Remove the specific "ahoy reset" line from the literal block content.
+        $lines = explode("\n", $node->value);
+        $filtered_lines = array_filter($lines, function ($line): bool {
+          return trim($line) !== 'ahoy reset';
+        });
+        $node->value = implode("\n", $filtered_lines);
+      }
+      // Keep all nodes.
+      return $node;
+    });
+
+    $actual_content = $yaml->dump();
+    $expected_content = file_get_contents($after);
+
+    $this->assertEquals(
+      $expected_content,
+      $actual_content,
+      'Output should match expected fixture after removing specific line from block content'
+    );
   }
 
 }

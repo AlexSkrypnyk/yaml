@@ -673,4 +673,53 @@ YAML;
     $this->assertJsonStringEqualsJsonString($json_expected, $json_result, 'Tokenized structure should match expected structure');
   }
 
+  public function testLiteralBlockIndentationPreservation(): void {
+    $yaml_content = <<<YAML
+cli:
+  cmd: |
+    if [ "\${#}" -ne 0 ]; then
+      docker compose exec cli bash -c "\$*"
+    else
+      docker compose exec cli bash
+    fi
+YAML;
+
+    $lexer = new Lexer();
+    $result = $lexer->tokenize($yaml_content);
+
+    // Find the literal block node.
+    $literal_block_node = NULL;
+    foreach ($result as $node) {
+      if ($node->type === NodeType::LiteralBlock && $node->key === 'cmd') {
+        $literal_block_node = $node;
+        break;
+      }
+    }
+
+    $this->assertNotNull($literal_block_node, 'Should find the cmd literal block node');
+
+    // Verify the literal block content preserves relative indentation.
+    $expected_value = <<<VALUE
+if [ "\${#}" -ne 0 ]; then
+  docker compose exec cli bash -c "\$*"
+else
+  docker compose exec cli bash
+fi
+
+VALUE;
+
+    $this->assertEquals($expected_value, $literal_block_node->value, 'Literal block should preserve relative indentation within the block content');
+
+    // Verify that the docker commands have 2 spaces of relative indentation.
+    $this->assertIsString($literal_block_node->value, 'Literal block value should be a string');
+    $lines = explode("\n", trim($literal_block_node->value));
+    // "  docker compose exec cli bash -c "$*""
+    $docker_line_1 = $lines[1];
+    // "  docker compose exec cli bash"
+    $docker_line_2 = $lines[3];
+
+    $this->assertStringStartsWith('  docker compose exec', $docker_line_1, 'First docker command should have 2 spaces of relative indentation');
+    $this->assertStringStartsWith('  docker compose exec', $docker_line_2, 'Second docker command should have 2 spaces of relative indentation');
+  }
+
 }

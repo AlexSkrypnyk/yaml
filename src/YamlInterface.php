@@ -183,11 +183,18 @@ interface YamlInterface {
   /**
    * Save the current YAML AST to a file with formatting preserved.
    *
-   * Example:
+   * @param string $file_path
+   *   The file path to save to.
+   * @param int $flags
+   *   Optional flags for dumping (same as dump() method).
+   *
+   *   Example:
+   *
    * @code
-   * $editor->save('ahoy-updated.yml');
+   *   $editor->save('ahoy-updated.yml');
+   *   $editor->save('ahoy-collapsed.yml', Yaml::DUMP_COLLAPSE_LITERAL_BLOCK_EMPTY_LINES);
    * @endcode
    */
-  public function save(string $file_path): void;
+  public function save(string $file_path, int $flags = 0): void;
 
 }

@@ -84,6 +84,9 @@ $comment = $yaml->getComment(['commands', 'build']);
 // Save back to file (preserves comments and formatting)
 $yaml->save('config.yml');
 
+// Save with flags (same as dump method)
+$yaml->save('config-collapsed.yml', Yaml::DUMP_COLLAPSE_LITERAL_BLOCK_EMPTY_LINES);
+
 // Or get as string
 $yamlString = $yaml->dump();
 

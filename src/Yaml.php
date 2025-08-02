@@ -143,8 +143,8 @@ class Yaml implements YamlInterface {
   /**
    * {@inheritdoc}
    */
-  public function save(string $file_path): void {
-    $content = $this->dump();
+  public function save(string $file_path, int $flags = 0): void {
+    $content = $this->dump($flags);
 
     if (file_put_contents($file_path, $content) === FALSE) {
       throw new \RuntimeException('Unable to write file: ' . $file_path);

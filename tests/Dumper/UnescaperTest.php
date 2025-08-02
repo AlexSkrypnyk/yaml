@@ -1,0 +1,56 @@
+<?php
+
+declare(strict_types=1);
+
+namespace AlexSkrypnyk\Yaml\Tests\Dumper;
+
+use AlexSkrypnyk\Yaml\Dumper\Unescaper;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Tests for the Unescaper class.
+ */
+#[CoversClass(Unescaper::class)]
+class UnescaperTest extends TestCase {
+
+  public function testUnescapeSingleQuotedValueStringWithoutOriginalLines(): void {
+    // Test unescapeSingleQuotedValueString method when original_lines is NULL.
+    $content = "key: 'value'";
+    $result = Unescaper::unescapeSingleQuotedValueString($content, NULL);
+    $this->assertSame($content, $result);
+  }
+
+  public function testUnescapeSingleQuotedValueStringWithValidContent(): void {
+    // Test unescapeSingleQuotedValueString method with proper original lines.
+    $content = "key: 'hello world'";
+    $original_lines = ["key: value"];
+    $result = Unescaper::unescapeSingleQuotedValueString($content, $original_lines, TRUE);
+    $this->assertStringContainsString('key: hello world', $result);
+  }
+
+  public function testBuildOriginallyQuotedMap(): void {
+    // Test the buildOriginallyQuotedMap method indirectly through
+    // unescapeSingleQuotedValueString.
+    $content = "key: 'quoted value'";
+    $original_lines = ["key: 'quoted value'"];
+    $result = Unescaper::unescapeSingleQuotedValueString($content, $original_lines);
+    // Should keep the quotes since it was originally quoted.
+    $this->assertStringContainsString("key: 'quoted value'", $result);
+  }
+
+  public function testUngreedyParameterBehavior(): void {
+    // Test that the use_ungreedy parameter controls quoting behavior.
+    $content = "key: 'hello world'";
+    $original_lines = ["key: value"];
+
+    // With ungreedy = TRUE, should not quote strings with spaces.
+    $ungreedy_result = Unescaper::unescapeSingleQuotedValueString($content, $original_lines, TRUE);
+    $this->assertStringContainsString('key: hello world', $ungreedy_result);
+
+    // With ungreedy = FALSE, should use strict Symfony quoting.
+    $strict_result = Unescaper::unescapeSingleQuotedValueString($content, $original_lines, FALSE);
+    $this->assertStringContainsString("key: 'hello world'", $strict_result);
+  }
+
+}

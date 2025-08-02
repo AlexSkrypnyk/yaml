@@ -111,10 +111,14 @@ class LineMatcher {
           $ast_value_parsed = $matching_ast_node->value;
 
           // If values are semantically different, use AST value (indicates
-          // update). If values are the same, preserve original formatting
-          // but use parsed value.
+          // update). If values are the same, preserve original formatting.
           if ($token_value_parsed !== $ast_value_parsed) {
             $enhanced_token->value = $matching_ast_node->value;
+          }
+          elseif ($this->isInlineFormat($token->value)) {
+            // Preserve original string format for inline arrays/maps to
+            // maintain original formatting in dumper.
+            $enhanced_token->value = $token->value;
           }
           else {
             // Use the parsed value for semantic comparison, but rawLine
@@ -322,6 +326,30 @@ class LineMatcher {
         $this->removeConflictingAstChildren($node->children);
       }
     }
+  }
+
+  /**
+   * Check if a value represents inline array or map format.
+   *
+   * @param mixed $value
+   *   The value to check.
+   *
+   * @return bool
+   *   TRUE if the value is in inline format.
+   */
+  protected function isInlineFormat($value): bool {
+    if (!is_string($value)) {
+      return FALSE;
+    }
+
+    $trimmed = trim($value);
+
+    // Check for inline array: [item1, item2] or [item].
+    if (preg_match('/^\[.*\]$/', $trimmed)) {
+      return TRUE;
+    }
+    // Check for inline map: {key1: value1, key2: value2} or {key: value}.
+    return (bool) preg_match('/^\{.*\}$/', $trimmed);
   }
 
 }

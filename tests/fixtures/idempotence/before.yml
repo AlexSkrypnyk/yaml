@@ -27,6 +27,7 @@ commands:
   down:
     usage: 'Stop and remove containers, images, volumes and networks.'
     cmd: docker compose down --remove-orphans --volumes
+    aliases: [test-behat]
 
   restart:
     usage: Restart stopped or running containers.
@@ -51,6 +52,23 @@ commands:
   fe:
     usage: Build front-end assets.
     cmd: ahoy cli "cd ${WEBROOT}/themes/custom/${DRUPAL_THEME} && yarn run build"
+
+  fe2:
+    usage: Build front-end assets.
+    cmd: ahoy cli php -v | grep -q Xdebug || XDEBUG_ENABLE=true ahoy up cli php nginx && ahoy cli php -v | grep -q Xdebug && echo "Enabled debug configuration. Use ''ahoy up'' to disable."
+
+  # Drop into a shell if no arguments are supplied, otherwise run the command.
+  # Environment variables are passed from the host and filtered by prefix.
+  # Use \" (slash followed by a double quote) to escape double quotes in
+  # arguments that contain spaces.
+  cli:
+    usage: Start a shell or run a command inside the CLI service container.
+    cmd: |
+      if [ "${#}" -ne 0 ]; then
+        docker compose exec $(env | cut -f1 -d= | grep "TERM\|COMPOSE_\|GITHUB_\|PACKAGE_\|DOCKER_\|DRUPAL_\|VORTEX_" | sed 's/^/-e /') cli bash -c "$*"
+      else
+        docker compose exec $(env | cut -f1 -d= | grep "TERM\|COMPOSE_\|GITHUB_\|PACKAGE_\|DOCKER_\|DRUPAL_\|VORTEX_" | sed 's/^/-e /') cli bash
+      fi
 
 # Override entrypoint to alter default behavior of Ahoy.
 entrypoint:

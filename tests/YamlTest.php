@@ -223,4 +223,29 @@ class YamlTest extends TestCase {
     $yaml->getComment(['nonexistent', 'path']);
   }
 
+  public function testSaveWithFlags(): void {
+    $yaml = new Yaml();
+    $yaml->load($this->fixturesDir . '/collapse-empty-lines-without-flag/before.yml');
+
+    $temp_file = sys_get_temp_dir() . '/test_save_flags.yml';
+
+    // Test save without flags.
+    $yaml->save($temp_file);
+    $content_without_flags = file_get_contents($temp_file);
+
+    // Test save with collapse flag.
+    $yaml->save($temp_file, Yaml::DUMP_COLLAPSE_LITERAL_BLOCK_EMPTY_LINES);
+    $content_with_flags = file_get_contents($temp_file);
+
+    // Verify the contents are different (collapsed vs non-collapsed)
+    $this->assertNotEquals($content_without_flags, $content_with_flags);
+
+    // Verify the flagged version matches what dump() would produce.
+    $expected_content = $yaml->dump(Yaml::DUMP_COLLAPSE_LITERAL_BLOCK_EMPTY_LINES);
+    $this->assertEquals($expected_content, $content_with_flags);
+
+    // Clean up.
+    unlink($temp_file);
+  }
+
 }
